@@ -15,16 +15,51 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 server = app.server
 
-app.layout = html.Div([
-    html.H2('Chromatographie'),
-    html.H3("Controle du XX avril"),
-    html.P("Saisir votre numéro étudiant :"),
-    dcc.Input(id="student-id", type="number", debounce=True,
-              placeholder=0),
-    html.Button('Submit', id='submit', n_clicks=0),
+app.layout = html.Div(className="container", children=[
+    html.Div(className="row", children=[
+        html.Div(className="eight columns", children=[
+            html.H2('Chromatographie',
+                    style={"color": "#2980b9", "borderBottom": "solid 2px #2980b9"}),
+            html.H5("Controle du XX avril"),
+            html.Label("Saisir votre numéro étudiant :"),
+            dcc.Input(id="student-id", type="number", debounce=True,
+                      placeholder=0),
+            html.Button('Submit', id='submit', n_clicks=0,
+                        className="button-primary",
+                        style={"marginLeft": "20px"}),
+            html.P("Cliquer sur l'appareil photo pour télécharger l'image.",
+                   style={"marginTop": "20px"})
+        ]),
+        html.Div(className="four columns", children=[
+            html.A(
+                html.Img(
+                    src="http://gvallver.perso.univ-pau.fr/img/logo_uppa.png",
+                    height="100px",
+                ),
+                href="https://www.univ-pau.fr"
+            )
+        ]),
+    ]),
     html.Div(
         dcc.Graph(id='graph'),
-    )
+        #style={"borderTop": "solid 1px #2980b9", "marginTop": "20px"}
+    ),
+    html.Div([
+        html.Div(className="row", children=[
+            html.Div(className="six columns", children=[
+                html.P(children=[
+                    "Hosted on ",
+                    html.A("heroku", href="https://www.heroku.com/")
+                ])
+            ]),
+            html.Div(className="six columns", children=[
+                html.P(children=[
+                    html.A("Germain Salvato Vallverdu", href="https://gsalvatovallverdu.gitlab.io")
+                ])
+            ], style={"textAlign": "right"})
+        ]),
+    ], style={"borderTop": "solid 1px #2980b9", "paddingTop": "20px",
+              "marginTop": "10px", "fontSize": "small"})
 ])
 
 def normpdf(x, mu, sigma):
@@ -60,9 +95,10 @@ def display_graph(n_clicks, value):
     np.random.seed(int(value))
 
     # pics
-    pos = [np.random.uniform(3, 4),
+    pos = [np.random.uniform(1, 1.1),
+           np.random.uniform(3, 4),
            np.random.uniform(4, 5),
-           np.random.uniform(6, 7)]
+           np.random.uniform(10, 12)]
     npos = len(pos)
     amp = np.random.uniform(1, 3, size=npos)
     width = np.random.uniform(0.05, 0.15, size=npos)
@@ -73,17 +109,23 @@ def display_graph(n_clicks, value):
     spectre = make_chromato(tps, pics)
 
     fig = px.line(
-        x=tps, y=spectre, range_x=(0, 15),
+        x=tps, y=spectre,
+        range_x=(0, 15),
+        range_y=(spectre.min(), 1.2 * spectre.max()),
         title="Chromatogramme %s" % value,
         labels={"x": "temps (min)", "y": "Intensité"},
-        template="plotly_white"
+        template="plotly_white",
+        color_discrete_sequence=["#2980b9"],
     )
 
     fig.update_layout(
+        #width=943,
+        height=666,
+        yaxis={'scaleanchor': 'x'},
         font=dict(
             #family="Arial",
             size=20,
-            color="#7f7f7f"
+            color="#2c3e50"
         )
     )
 
