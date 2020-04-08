@@ -1,4 +1,5 @@
-import os
+#!/usr/bin/env python
+# coding: utf-8
 
 import dash
 from dash.dependencies import Input, Output, State
@@ -15,6 +16,7 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 server = app.server
 
+# HTML page Layout
 app.layout = html.Div(className="container", children=[
     html.Div(className="row", children=[
         html.Div(className="eight columns", children=[
@@ -42,7 +44,7 @@ app.layout = html.Div(className="container", children=[
     ]),
     html.Div(
         dcc.Graph(id='graph'),
-        #style={"borderTop": "solid 1px #2980b9", "marginTop": "20px"}
+        # style={"borderTop": "solid 1px #2980b9", "marginTop": "20px"}
     ),
     html.Div([
         html.Div(className="row", children=[
@@ -54,7 +56,8 @@ app.layout = html.Div(className="container", children=[
             ]),
             html.Div(className="six columns", children=[
                 html.P(children=[
-                    html.A("Germain Salvato Vallverdu", href="https://gsalvatovallverdu.gitlab.io")
+                    html.A("Germain Salvato Vallverdu",
+                           href="https://gsalvatovallverdu.gitlab.io")
                 ])
             ], style={"textAlign": "right"})
         ]),
@@ -62,17 +65,34 @@ app.layout = html.Div(className="container", children=[
               "marginTop": "10px", "fontSize": "small"})
 ])
 
+# ------------------------------------------------------------------------------
+# utility functions
+
 def normpdf(x, mu, sigma):
+    """ gaussian function located at mu and half width sigma """
     return 1 / (sigma * np.sqrt(2 * np.pi)) * np.exp(-(x - mu)**2 / (2 * sigma**2))
 
+
 def normcdf(x, mu, sigma, alpha=1):
+    """ gaussian cdf at located at mu of width sigma and height alpha """
     return 0.5 * (1 + erf(alpha * (x - mu) / (sigma * np.sqrt(2))))
 
+
 def skewed(x, mu, sigma, alpha, a):
+    """ skewed distribution located at mu of width sigma amplitude a and 
+    skewness alpha """
     return a * normpdf(x, mu, sigma) * normcdf(x, mu, sigma, alpha)
 
-def make_chromato(t, pics, noise=0.05):
 
+def make_chromato(t, pics, noise=0.05):
+    """ produce a chromatogram 
+
+    Args:
+        t (float): a numpy array of float corresponding to the time
+        pics (list of tuples): list of pics each pic is defined from a tuple 
+            such as (amplitude, position, width)
+        noise (float): amplitude of a gaussian noise added to the spectra
+    """
     chromato = np.zeros(t.shape)
     for amp, mu, sigma in pics:
         chromato += skewed(t, mu, sigma, alpha=2, a=amp)
@@ -81,6 +101,7 @@ def make_chromato(t, pics, noise=0.05):
     chromato += np.random.normal(loc=0, scale=noise, size=t.shape)
 
     return chromato
+
 
 @app.callback(
     Output('graph', 'figure'),
@@ -119,17 +140,18 @@ def display_graph(n_clicks, value):
     )
 
     fig.update_layout(
-        #width=943,
+        # width=943,
         height=666,
         yaxis={'scaleanchor': 'x'},
         font=dict(
-            #family="Arial",
+            # family="Arial",
             size=20,
             color="#2c3e50"
         )
     )
 
     return fig
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
