@@ -10,18 +10,37 @@ import plotly.express as px
 import numpy as np
 from scipy.special import erf
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+external_stylesheets = [
+    'https://codepen.io/chriddyp/pen/bWLwgP.css',
+    "https://use.fontawesome.com/releases/v5.8.1/css/all.css",
+]
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-
 server = app.server
 
 # HTML page Layout
 app.layout = html.Div(className="container", children=[
+    html.Div([
+        html.A(
+            id="github-link",
+            href="https://github.com/gVallverdu/chromatorand",
+            children=[
+                html.Span(id="github-icon", className="fab fa-github fa-2x",
+                          style={"verticalAlign": "bottom"}),
+                " View on GitHub",
+            ],
+            style={"color": "#7f8c8d", "textDecoration": "none",
+                   "display": "block", "width": "160px",
+                   "border": "solid 1px #7f8c8d", "borderRadius": "4px",
+                   "padding": "5px", "textAlign": "center", },
+        ),
+    ], style={"float": "right"}
+    ),
     html.Div(className="row", children=[
-        html.Div(className="eight columns", children=[
+        html.Div(children=[
             html.H2('Chromatographie',
-                    style={"color": "#2980b9", "borderBottom": "solid 2px #2980b9"}),
+                    style={"color": "#2980b9", "borderBottom": "solid 2px #2980b9",
+                           "paddingTop": "30px"}),
             html.H5("Controle du XX avril"),
             html.Label("Saisir votre numéro étudiant :"),
             dcc.Input(id="student-id", type="number", debounce=True,
@@ -32,41 +51,37 @@ app.layout = html.Div(className="container", children=[
             html.P("Cliquer sur l'appareil photo pour télécharger l'image.",
                    style={"marginTop": "20px"})
         ]),
-        html.Div(className="four columns", children=[
-            html.A(
-                html.Img(
-                    src="http://gvallver.perso.univ-pau.fr/img/logo_uppa.png",
-                    height="100px",
-                ),
-                href="https://www.univ-pau.fr"
-            )
-        ]),
+
     ]),
     html.Div(
         dcc.Graph(id='graph'),
-        # style={"borderTop": "solid 1px #2980b9", "marginTop": "20px"}
     ),
     html.Div([
         html.Div(className="row", children=[
             html.Div(className="six columns", children=[
-                html.P(children=[
-                    "Hosted on ",
-                    html.A("heroku", href="https://www.heroku.com/")
-                ])
+                html.A(
+                    html.Img(
+                        src="http://gvallver.perso.univ-pau.fr/img/logo_uppa.png",
+                        height="50px",
+                    ),
+                    href="https://www.univ-pau.fr"
+                )
             ]),
             html.Div(className="six columns", children=[
                 html.P(children=[
                     html.A("Germain Salvato Vallverdu",
-                           href="https://gsalvatovallverdu.gitlab.io")
-                ])
-            ], style={"textAlign": "right"})
+                           href="https://gsalvatovallverdu.gitlab.io",
+                           style={"color": "#7f8c8d"})
+                ]),
+            ], style={"textAlign": "right", "paddingTop": "10px"})
         ]),
-    ], style={"borderTop": "solid 1px #2980b9", "paddingTop": "20px",
+    ], style={"borderTop": "solid 2px #7f8c8d",
               "marginTop": "10px", "fontSize": "small"})
 ])
 
 # ------------------------------------------------------------------------------
 # utility functions
+
 
 def normpdf(x, mu, sigma):
     """ gaussian function located at mu and half width sigma """
@@ -98,6 +113,7 @@ def make_chromato(t, pics, noise=0.05):
         chromato += skewed(t, mu, sigma, alpha=2, a=amp)
         # chromato += amp * normpdf(t, mu, sigma)
 
+    # add some noise
     chromato += np.random.normal(loc=0, scale=noise, size=t.shape)
 
     return chromato
@@ -109,9 +125,16 @@ def make_chromato(t, pics, noise=0.05):
     [State('student-id', 'value')]
 )
 def display_graph(n_clicks, value):
+    """ Display the random chromatogram """
+
+    # abscissa : time
+    tmax = 15
+    tps = np.linspace(0, tmax, 1000)
 
     if value is None:
-        return {}
+        fig = {"layout": dict(height=666, xaxis={"range": (0, tmax)},
+                              yaxis={"range": (0, 4)})}
+        return fig
     # set up a seed
     np.random.seed(int(value))
 
@@ -126,13 +149,10 @@ def display_graph(n_clicks, value):
 
     pics = [(a, p, w) for a, p, w in zip(amp, pos, width)]
 
-    tps = np.linspace(0, 15, 1000)
     spectre = make_chromato(tps, pics)
 
     fig = px.line(
         x=tps, y=spectre,
-        range_x=(0, 15),
-        range_y=(spectre.min(), 1.2 * spectre.max()),
         title="Chromatogramme %s" % value,
         labels={"x": "temps (min)", "y": "Intensité"},
         template="plotly_white",
@@ -142,7 +162,8 @@ def display_graph(n_clicks, value):
     fig.update_layout(
         # width=943,
         height=666,
-        yaxis={'scaleanchor': 'x'},
+        yaxis={"range": (spectre.min(), 1.2 * spectre.max())},
+        xaxis={"range": (0, tmax)},
         font=dict(
             # family="Arial",
             size=20,
