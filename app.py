@@ -20,8 +20,8 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 
 # load yaml file to define the spectra
-spectre_data = "assets/data/spectre.yml"
-with open(spectre_data, "r") as fdata:
+data_file = "assets/data/config.yml"
+with open(data_file, "r") as fdata:
     data = yaml.load(fdata, Loader=yaml.SafeLoader)
 
 # HTML page Layout
@@ -61,6 +61,9 @@ app.layout = html.Div(className="container", children=[
     ]),
     html.Div(
         dcc.Graph(id='graph'),
+    ),
+    html.Div(
+        dcc.Graph(id='vd-graph'),
     ),
     html.Div([
         html.Div(className="row", children=[
@@ -104,6 +107,9 @@ def skewed(x, mu, sigma, alpha, a):
     skewness alpha """
     return a * normpdf(x, mu, sigma) * normcdf(x, mu, sigma, alpha)
 
+def van_deemter(x, a=1, b=1, c=1):
+    """ Van deemter function """
+    return a + b / x + c * x
 
 def make_chromato(t, pics, noise=0.05):
     """ produce a chromatogram 
@@ -126,7 +132,8 @@ def make_chromato(t, pics, noise=0.05):
 
 
 @app.callback(
-    Output('graph', 'figure'),
+    [Output('graph', 'figure'),
+     Output('vd-graph', 'figure')],
     [Input('submit', 'n_clicks')],
     [State('student-id', 'value')]
 )
@@ -134,19 +141,22 @@ def display_graph(n_clicks, value):
     """ Display the random chromatogram """
 
     # abscissa : time
-    tmax = 15
-    tps = np.linspace(0, tmax, 1000)
+    tmin = data["tmin"]
+    tmax = data["tmax"]
+    npts = data["npts"]
+    tps = np.linspace(tmin, tmax, npts)
 
     if value is None:
-        fig = {"layout": dict(height=666, xaxis={"range": (0, tmax)},
+        fig = {"layout": dict(height=666, xaxis={"range": (tmin, tmax)},
                               yaxis={"range": (0, 4)})}
-        return fig
+        return fig, {}
+
     # set up a seed
     np.random.seed(int(value))
 
     # random pics from 'spectre.yml' data
     pics = list()
-    for pic in data:
+    for pic in data["pics"]:
         pos = np.random.uniform(pic["pos"]["min"], pic["pos"]["max"])
         amp = np.random.uniform(pic["amp"]["min"], pic["amp"]["max"])
         width = np.random.uniform(pic["width"]["min"], pic["width"]["max"])
@@ -155,7 +165,7 @@ def display_graph(n_clicks, value):
     # build spectre
     spectre = make_chromato(tps, pics)
 
-    # plot
+    # plot of the chromatogram
     fig = px.line(
         x=tps, y=spectre,
         title="Chromatogramme %s" % value,
@@ -168,7 +178,7 @@ def display_graph(n_clicks, value):
         # width=943,
         height=666,
         yaxis={"range": (spectre.min(), 1.2 * spectre.max())},
-        xaxis={"range": (0, tmax)},
+        xaxis={"range": (tmin, tmax)},
         font=dict(
             # family="Arial",
             size=20,
@@ -176,7 +186,20 @@ def display_graph(n_clicks, value):
         )
     )
 
-    return fig
+    # Van Deemter plot
+    x = np.linspace(1, 4, 100)
+    vd_fig = px.line(
+        x=x, y=van_deemter(x),
+        title="Van Deemter",
+        labels={"x": "??", "y": "??"},
+        template="plotly_white",
+        #color_discrete_sequence=["#2980b9"],
+    )
+    vd_fig.update_layout(
+        font=dict(size=20, color="#2c3e50")
+    )
+
+    return fig, vd_fig
 
 
 if __name__ == '__main__':
