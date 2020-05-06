@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import yaml
 import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
@@ -17,6 +18,11 @@ external_stylesheets = [
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
+
+# load yaml file to define the spectra
+spectre_data = "assets/data/spectre.yml"
+with open(spectre_data, "r") as fdata:
+    data = yaml.load(fdata, Loader=yaml.SafeLoader)
 
 # HTML page Layout
 app.layout = html.Div(className="container", children=[
@@ -138,19 +144,18 @@ def display_graph(n_clicks, value):
     # set up a seed
     np.random.seed(int(value))
 
-    # pics
-    pos = [np.random.uniform(1, 1.1),
-           np.random.uniform(3, 4),
-           np.random.uniform(4, 5),
-           np.random.uniform(10, 12)]
-    npos = len(pos)
-    amp = np.random.uniform(1, 3, size=npos)
-    width = np.random.uniform(0.05, 0.15, size=npos)
+    # random pics from 'spectre.yml' data
+    pics = list()
+    for pic in data:
+        pos = np.random.uniform(pic["pos"]["min"], pic["pos"]["max"])
+        amp = np.random.uniform(pic["amp"]["min"], pic["amp"]["max"])
+        width = np.random.uniform(pic["width"]["min"], pic["width"]["max"])
+        pics.append((amp, pos, width))
 
-    pics = [(a, p, w) for a, p, w in zip(amp, pos, width)]
-
+    # build spectre
     spectre = make_chromato(tps, pics)
 
+    # plot
     fig = px.line(
         x=tps, y=spectre,
         title="Chromatogramme %s" % value,
