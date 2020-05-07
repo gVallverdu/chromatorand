@@ -62,6 +62,7 @@ app.layout = html.Div(className="container", children=[
     html.Div(
         dcc.Graph(id='graph'),
     ),
+    html.Div(id="integrale"),
     html.Div(
         dcc.Graph(id='vd-graph'),
     ),
@@ -111,29 +112,36 @@ def van_deemter(x, a=1, b=1, c=1):
     """ Van deemter function """
     return a + b / x + c * x
 
-def make_chromato(t, pics, noise=0.05):
+def make_chromato(t, peaks, noise=0.05):
     """ produce a chromatogram 
 
     Args:
         t (float): a numpy array of float corresponding to the time
-        pics (list of tuples): list of pics each pic is defined from a tuple 
+        peaks (list of tuples): list of peaks each peak is defined from a tuple 
             such as (amplitude, position, width)
         noise (float): amplitude of a gaussian noise added to the spectra
+
+    Returns
+        the spectra and the integral of each peaks.
     """
     chromato = np.zeros(t.shape)
-    for amp, mu, sigma in pics:
-        chromato += skewed(t, mu, sigma, alpha=2, a=amp)
+    integrals = list()
+    for amp, pos, width in peaks:
+        y = skewed(t, pos, width, alpha=2, a=amp)
+        integrals.append(np.trapz(y, t))
+        chromato += y
         # chromato += amp * normpdf(t, mu, sigma)
 
     # add some noise
     chromato += np.random.normal(loc=0, scale=noise, size=t.shape)
 
-    return chromato
+    return chromato, integrals
 
 
 @app.callback(
     [Output('graph', 'figure'),
-     Output('vd-graph', 'figure')],
+     Output('vd-graph', 'figure'),
+     Output('integrale', 'children')],
     [Input('submit', 'n_clicks')],
     [State('student-id', 'value')]
 )
@@ -141,35 +149,44 @@ def display_graph(n_clicks, value):
     """ Display the random chromatogram """
 
     # abscissa : time
-    tmin = data["tmin"]
-    tmax = data["tmax"]
-    npts = data["npts"]
+    chromato_data = data["chromatogram"]
+    tmin = chromato_data["tmin"]
+    tmax = chromato_data["tmax"]
+    npts = chromato_data["npts"]
     tps = np.linspace(tmin, tmax, npts)
 
     if value is None:
         fig = {"layout": dict(height=666, xaxis={"range": (tmin, tmax)},
                               yaxis={"range": (0, 4)})}
-        return fig, {}
+        return fig, {}, []
 
     # set up a seed
     np.random.seed(int(value))
 
-    # random pics from 'spectre.yml' data
-    pics = list()
-    for pic in data["pics"]:
-        pos = np.random.uniform(pic["pos"]["min"], pic["pos"]["max"])
-        amp = np.random.uniform(pic["amp"]["min"], pic["amp"]["max"])
-        width = np.random.uniform(pic["width"]["min"], pic["width"]["max"])
-        pics.append((amp, pos, width))
+    # random peaks from 'spectre.yml' data
+    peaks = list()
+    for peak in data["peaks"]:
+        pos = np.random.uniform(peak["pos"]["min"], peak["pos"]["max"])
+        amp = np.random.uniform(peak["amp"]["min"], peak["amp"]["max"])
+        width = np.random.uniform(peak["width"]["min"], peak["width"]["max"])
+        peaks.append((amp, pos, width))
 
-    # build spectre
-    spectre = make_chromato(tps, pics)
+    # build spectre and print integrals
+    spectre, integrals = make_chromato(tps, peaks)
+    items = list()
+    for i, integral in enumerate(integrals):
+        li = html.Li(children=[
+            html.B("peak %d: " % (i + 1)),
+            "%f" % integral,
+        ])
+        items.append(li)
+    div_integrals = [html.H5("Integrales des pics"), html.Ul(items)]
 
     # plot of the chromatogram
     fig = px.line(
         x=tps, y=spectre,
         title="Chromatogramme %s" % value,
-        labels={"x": "temps (min)", "y": "Intensité"},
+        labels={"x": chromato_data["xlabel"], "y": chromato_data["ylabel"]},
         template="plotly_white",
         color_discrete_sequence=["#2980b9"],
     )
@@ -187,11 +204,15 @@ def display_graph(n_clicks, value):
     )
 
     # Van Deemter plot
-    x = np.linspace(1, 4, 100)
+    vd_data = data["van_demeter"]
+    x = np.linspace(vd_data["xmin"], vd_data["xmax"], 1000)
+    a = np.random.uniform(vd_data["a"]["min"], vd_data["a"]["min"])
+    b = np.random.uniform(vd_data["b"]["min"], vd_data["b"]["min"])
+    c = np.random.uniform(vd_data["c"]["min"], vd_data["c"]["min"])
     vd_fig = px.line(
-        x=x, y=van_deemter(x),
+        x=x, y=van_deemter(x, a, b, c),
         title="Van Deemter",
-        labels={"x": "??", "y": "??"},
+        labels={"x": vd_data["xlabel"], "y": vd_data["xlabel"]},
         template="plotly_white",
         #color_discrete_sequence=["#2980b9"],
     )
@@ -199,7 +220,7 @@ def display_graph(n_clicks, value):
         font=dict(size=20, color="#2c3e50")
     )
 
-    return fig, vd_fig
+    return fig, vd_fig, div_integrals
 
 
 if __name__ == '__main__':

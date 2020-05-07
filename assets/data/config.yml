@@ -1,15 +1,17 @@
 # ------------------------------------------------------------------------------
 # this is a config ymal file for the app
 # ------------------------------------------------------------------------------
-# main characteristics 
-tmin: 0
-tmax: 15
-npts: 1000
-units: "min"
-# define the positions of the pics
-# each pics start with a dash and have three parameters: amp, pos, width
+# main characteristics
+chromatogram:
+  tmin: 0
+  tmax: 15
+  npts: 1000
+  xlabel: "temps (min)"
+  ylabel: "Intensité"
+# define the positions of the peaks
+# each peaks start with a dash and have three parameters: amp, pos, width
 # for each parameters, a uniform random number is computed between min and max
-pics:
+peaks:
   - amp:
       max: 3
       min: 1
@@ -46,3 +48,18 @@ pics:
     width:
       max: 0.15
       min: 0.015
+# van Demeter configuration
+van_demeter:
+  a: 
+    max: 5.
+    min: 1.
+  b:
+    min: 1.
+    max: 100.
+  c: 
+    min: 0.1
+    max: 0.5
+  xmin: 1
+  xmax: 50
+  xlabel: "Débit (mL/min)"
+  ylabel: "Hauteur des Plateaux (mm)"
