@@ -8,44 +8,16 @@ chromatogram:
   npts: 1000
   xlabel: "temps (min)"
   ylabel: "Intensité"
-# define the positions of the peaks
-# each peaks start with a dash and have three parameters: amp, pos, width
+# define the number of peaks
+# peaks are spread out randomly on the chromatogram
+# each peak is define from its amplitude "amp" and width "width"
 # for each parameters, a uniform random number is computed between min and max
 peaks:
-  - amp:
+  npeaks: 6
+  amp:
       max: 3
       min: 1
-    pos:
-      max: 1.1
-      min: 1.0
-    width:
-      max: 0.15
-      min: 0.015
-  - amp:
-      max: 3
-      min: 1
-    pos:
-      max: 4.0
-      min: 3.0
-    width:
-      max: 0.15
-      min: 0.015
-  - amp:
-      max: 3
-      min: 1
-    pos:
-      max: 5.0
-      min: 4.0
-    width:
-      max: 0.15
-      min: 0.015
-  - amp:
-      max: 3
-      min: 1
-    pos:
-      max: 12.0
-      min: 10.0
-    width:
+  width:
       max: 0.15
       min: 0.015
 # van Deemter configuration
