@@ -48,8 +48,8 @@ peaks:
     width:
       max: 0.15
       min: 0.015
-# van Demeter configuration
-van_demeter:
+# van Deemter configuration
+van_deemter:
   a: 
     max: 5.
     min: 1.

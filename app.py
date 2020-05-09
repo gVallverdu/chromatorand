@@ -204,7 +204,7 @@ def display_graph(n_clicks, value):
     )
 
     # Van Deemter plot
-    vd_data = data["van_demeter"]
+    vd_data = data["van_deemter"]
     x = np.linspace(vd_data["xmin"], vd_data["xmax"], 1000)
     a = np.random.uniform(vd_data["a"]["min"], vd_data["a"]["min"])
     b = np.random.uniform(vd_data["b"]["min"], vd_data["b"]["min"])
