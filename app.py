@@ -163,13 +163,19 @@ def display_graph(n_clicks, value):
     # set up a seed
     np.random.seed(int(value))
 
-    # random peaks from 'spectre.yml' data
+    # random peaks generation
+    pdata = data["peaks"]
+    npeaks = pdata["npeaks"]
+    t1 = tmin + .05 * (tmax - tmin)
+    dt = (tmax - tmin) * .9 / npeaks
     peaks = list()
-    for peak in data["peaks"]:
-        pos = np.random.uniform(peak["pos"]["min"], peak["pos"]["max"])
-        amp = np.random.uniform(peak["amp"]["min"], peak["amp"]["max"])
-        width = np.random.uniform(peak["width"]["min"], peak["width"]["max"])
+    for ipeak in range(npeaks):
+        t2 = t1 + dt 
+        pos = np.random.uniform(t1, t2)
+        amp = np.random.uniform(pdata["amp"]["min"], pdata["amp"]["max"])
+        width = np.random.uniform(pdata["width"]["min"], pdata["width"]["max"])
         peaks.append((amp, pos, width))
+        t1 = t2
 
     # build spectre and print integrals
     spectre, integrals = make_chromato(tps, peaks)
@@ -204,7 +210,7 @@ def display_graph(n_clicks, value):
     )
 
     # Van Deemter plot
-    vd_data = data["van_demeter"]
+    vd_data = data["van_deemter"]
     x = np.linspace(vd_data["xmin"], vd_data["xmax"], 1000)
     a = np.random.uniform(vd_data["a"]["min"], vd_data["a"]["min"])
     b = np.random.uniform(vd_data["b"]["min"], vd_data["b"]["min"])
