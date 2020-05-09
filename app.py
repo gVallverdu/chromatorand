@@ -19,6 +19,16 @@ external_stylesheets = [
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 
+# set True to show all info and change the seed
+EXAM = False
+
+# name
+if EXAM:
+    exam_title = "Contrôle continu du 11 Mai 2020"
+    seed = 1111
+else:
+    exam_title = "Test avant contrôle"
+
 # load yaml file to define the spectra
 data_file = "assets/data/config.yml"
 with open(data_file, "r") as fdata:
@@ -47,15 +57,20 @@ app.layout = html.Div(className="container", children=[
             html.H2('Chromatographie',
                     style={"color": "#2980b9", "borderBottom": "solid 2px #2980b9",
                            "paddingTop": "30px"}),
-            html.H5("Controle du XX avril"),
+            html.H5(exam_title),
+            html.P("Lorsque vous entrez votre numéro étudiant, un chromatogramme"
+                   " unique est généré. Le numéro utilisé s'affiche sur le titre"
+                   " du graphique. Enregistrez votre graphique avec le numéro"
+                   " visible. Pour télécharger une image des graphiques,"
+                   " cliquez sur l'appareil photo qui apparaît en haut à droite"
+                   " lorsque la souris survole le graphique.",
+                   style={"textAlign": "justify"}),
             html.Label("Saisir votre numéro étudiant :"),
             dcc.Input(id="student-id", type="number", debounce=True,
                       placeholder=0),
             html.Button('Submit', id='submit', n_clicks=0,
                         className="button-primary",
                         style={"marginLeft": "20px"}),
-            html.P("Cliquer sur l'appareil photo pour télécharger l'image.",
-                   style={"marginTop": "20px"})
         ]),
 
     ]),
@@ -108,9 +123,11 @@ def skewed(x, mu, sigma, alpha, a):
     skewness alpha """
     return a * normpdf(x, mu, sigma) * normcdf(x, mu, sigma, alpha)
 
+
 def van_deemter(x, a=1, b=1, c=1):
     """ Van deemter function """
     return a + b / x + c * x
+
 
 def make_chromato(t, peaks, noise=0.05):
     """ produce a chromatogram 
@@ -161,7 +178,10 @@ def display_graph(n_clicks, value):
         return fig, {}, []
 
     # set up a seed
-    np.random.seed(int(value))
+    if EXAM:
+        np.random.seed(seed + int(value))
+    else:
+        np.random.seed(int(value))
 
     # random peaks generation
     pdata = data["peaks"]
@@ -170,7 +190,7 @@ def display_graph(n_clicks, value):
     dt = (tmax - tmin) * .9 / npeaks
     peaks = list()
     for ipeak in range(npeaks):
-        t2 = t1 + dt 
+        t2 = t1 + dt
         pos = np.random.uniform(t1, t2)
         amp = np.random.uniform(pdata["amp"]["min"], pdata["amp"]["max"])
         width = np.random.uniform(pdata["width"]["min"], pdata["width"]["max"])
@@ -181,6 +201,8 @@ def display_graph(n_clicks, value):
     spectre, integrals = make_chromato(tps, peaks)
     items = list()
     for i, integral in enumerate(integrals):
+        if not EXAM:
+            integral = 0.
         li = html.Li(children=[
             html.B("peak %d: " % (i + 1)),
             "%f" % integral,
@@ -189,9 +211,13 @@ def display_graph(n_clicks, value):
     div_integrals = [html.H5("Integrales des pics"), html.Ul(items)]
 
     # plot of the chromatogram
+    if EXAM:
+        title = "Chromatogramme %s" % value
+    else:
+        title = "Ceci est un TEST ! Chromatogramme %s" % value
     fig = px.line(
         x=tps, y=spectre,
-        title="Chromatogramme %s" % value,
+        title=title,
         labels={"x": chromato_data["xlabel"], "y": chromato_data["ylabel"]},
         template="plotly_white",
         color_discrete_sequence=["#2980b9"],
@@ -220,13 +246,16 @@ def display_graph(n_clicks, value):
         title="Van Deemter",
         labels={"x": vd_data["xlabel"], "y": vd_data["xlabel"]},
         template="plotly_white",
-        #color_discrete_sequence=["#2980b9"],
+        color_discrete_sequence=["#2980b9"],
     )
     vd_fig.update_layout(
         font=dict(size=20, color="#2c3e50")
     )
 
-    return fig, vd_fig, div_integrals
+    if EXAM:
+        return fig, vd_fig, div_integrals
+    else:
+        return fig, {}, div_integrals
 
 
 if __name__ == '__main__':

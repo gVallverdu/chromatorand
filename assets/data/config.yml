@@ -8,11 +8,11 @@ chromatogram:
   npts: 1000
   xlabel: "temps (min)"
   ylabel: "Intensité"
+peaks:
 # define the number of peaks
 # peaks are spread out randomly on the chromatogram
 # each peak is define from its amplitude "amp" and width "width"
 # for each parameters, a uniform random number is computed between min and max
-peaks:
   npeaks: 6
   amp:
       max: 3
