@@ -20,7 +20,7 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 
 # set True to show all info and change the seed
-EXAM = False
+EXAM = True
 
 # name
 if EXAM:
@@ -244,7 +244,7 @@ def display_graph(n_clicks, value):
     vd_fig = px.line(
         x=x, y=van_deemter(x, a, b, c),
         title="Van Deemter",
-        labels={"x": vd_data["xlabel"], "y": vd_data["xlabel"]},
+        labels={"x": vd_data["xlabel"], "y": vd_data["ylabel"]},
         template="plotly_white",
         color_discrete_sequence=["#2980b9"],
     )
